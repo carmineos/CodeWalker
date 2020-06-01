@@ -263,8 +263,8 @@ namespace CodeWalker.GameFiles
 
         public static byte[] Build(ResourceFileBase fileBase, int version, bool compress = true)
         {
-
-            fileBase.FilePagesInfo = new ResourcePagesInfo();
+            // Create a mock ResourcePagesInfo block to ensure size to fit real one
+            fileBase.FilePagesInfo = new ResourcePagesInfo(255, 255);
 
             IList<IResourceBlock> systemBlocks;
             IList<IResourceBlock> graphicBlocks;
