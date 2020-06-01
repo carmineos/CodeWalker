@@ -213,15 +213,15 @@ namespace CodeWalker.Forms
                     //TODO: modify embedded textures!
                 }
             }
-            else if (parm.DataType == 1)//Vector4
+            else if (parm.DataType == ShaderVariableType.Vector4)//Vector4
             {
                 parm.Data = FloatUtil.ParseVector4String(txt);
             }
             else //Vector4 array
             {
                 var strs = txt.Split(';');
-                var vecs = new Vector4[parm.DataType];
-                for (int i = 0; i < parm.DataType; i++)
+                var vecs = new Vector4[(byte)parm.DataType];
+                for (int i = 0; i < (byte)parm.DataType; i++)
                 {
                     var vec = Vector4.Zero;
                     if (i < strs.Length)

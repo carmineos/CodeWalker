@@ -741,9 +741,9 @@ namespace CodeWalker
             for (int i = 0; i < pVals.Count; i++)
             {
                 var pVal = pVals[i];
-                if (pVal.DataType == 1)
+                if (pVal.DataType == ShaderVariableType.Vector4)
                 {
-                    pVal.Unknown_1h = (byte)(160 + ((pVals.Count - 1) - i));//seriously wtf is this and why
+                    pVal.RegisterIndex = (byte)(160 + ((pVals.Count - 1) - i));//seriously wtf is this and why
                 }
             }
 
@@ -793,11 +793,11 @@ namespace CodeWalker
             if (paramValue is TextureBase)
             {
                 p.DataType = 0;
-                p.Unknown_1h = (byte)((paramNames.Count > 0) ? paramNames.Count + 1 : 0);//seriously wtf is this?
+                p.RegisterIndex = (byte)((paramNames.Count > 0) ? paramNames.Count + 1 : 0);//seriously wtf is this?
             }
             else if (paramValue is Vector4)
             {
-                p.DataType = 1;
+                p.DataType = ShaderVariableType.Vector4;
             }
             else
             { }

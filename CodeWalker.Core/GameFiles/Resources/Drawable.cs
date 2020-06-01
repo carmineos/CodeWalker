@@ -404,10 +404,24 @@ namespace CodeWalker.GameFiles
 
     }
 
+    public enum ShaderVariableType : byte
+    {
+        Sampler = 0,
+        Vector4 = 1,
+        Vector4x2 = 2,
+        Vector4x3 = 3,
+        Vector4x4 = 4,
+        Vector4x5 = 5,
+        
+        //Float,
+        //Vector2,
+        //Vector3,
+    }
+
     [TypeConverter(typeof(ExpandableObjectConverter))] public class ShaderParameter
     {
-        public byte DataType { get; set; } //0: texture, 1: vector4
-        public byte Unknown_1h { get; set; }
+        public ShaderVariableType DataType { get; set; } //0: texture, 1: vector4
+        public byte RegisterIndex { get; set; }
         public ushort Unknown_2h; // 0x0000
         public uint Unknown_4h; // 0x00000000
         public ulong DataPointer { get; set; }
@@ -416,16 +430,16 @@ namespace CodeWalker.GameFiles
 
         public void Read(ResourceDataReader reader)
         {
-            this.DataType = reader.ReadByte();
-            this.Unknown_1h = reader.ReadByte();
+            this.DataType = (ShaderVariableType)reader.ReadByte();
+            this.RegisterIndex = reader.ReadByte();
             this.Unknown_2h = reader.ReadUInt16();
             this.Unknown_4h = reader.ReadUInt32();
             this.DataPointer = reader.ReadUInt64();
         }
         public void Write(ResourceDataWriter writer)
         {
-            writer.Write(this.DataType);
-            writer.Write(this.Unknown_1h);
+            writer.Write((byte)this.DataType);
+            writer.Write(this.RegisterIndex);
             writer.Write(this.Unknown_2h);
             writer.Write(this.Unknown_4h);
             writer.Write(this.DataPointer);
@@ -458,7 +472,7 @@ namespace CodeWalker.GameFiles
                 foreach (var x in Parameters)
                 {
                     offset += 16;
-                    offset += 16 * x.DataType;
+                    offset += 16 * (byte)x.DataType;
                 }
 
                 offset += Parameters.Length * 4;
@@ -472,7 +486,7 @@ namespace CodeWalker.GameFiles
                 ushort size = (ushort)((Parameters?.Length??0) * 16);
                 foreach (var x in Parameters)
                 {
-                    size += (ushort)(16 * x.DataType);
+                    size += (ushort)(16 * (byte)x.DataType);
                 }
                 return size;
             }
@@ -529,17 +543,26 @@ namespace CodeWalker.GameFiles
                 // read reference data
                 switch (p.DataType)
                 {
-                    case 0:
+                    case ShaderVariableType.Sampler:
                         offset += 0;
                         p.Data = reader.ReadBlockAt<TextureBase>(p.DataPointer);
                         break;
-                    case 1:
+                    case ShaderVariableType.Vector4:
                         offset += 16;
                         p.Data = reader.ReadStructAt<Vector4>((long)p.DataPointer);
                         break;
+
+                    case ShaderVariableType.Vector4x2:
+                    case ShaderVariableType.Vector4x3:
+                    case ShaderVariableType.Vector4x4:
+                    case ShaderVariableType.Vector4x5:
+                        offset += 16 * (byte)p.DataType;
+                        p.Data = reader.ReadStructsAt<Vector4>(p.DataPointer, (byte)p.DataType, false);
+                        break;
+
                     default:
-                        offset += 16 * p.DataType;
-                        p.Data = reader.ReadStructsAt<Vector4>(p.DataPointer, p.DataType, false);
+                        offset += 16 * (byte)p.DataType;
+                        p.Data = reader.ReadStructsAt<Vector4>(p.DataPointer, (byte)p.DataType, false);
                         break;
                 }
             }
@@ -693,8 +716,8 @@ namespace CodeWalker.GameFiles
                 var name = (ShaderParamNames)Hashes[i];
                 var typestr = "";
                 if (param.DataType == 0) typestr = "Texture";
-                else if (param.DataType == 1) typestr = "Vector";
-                else if (param.DataType > 1) typestr = "Array";
+                else if (param.DataType == ShaderVariableType.Vector4) typestr = "Vector";
+                else if ((byte)param.DataType > 1) typestr = "Array";
                 var otstr = "Item name=\"" + name.ToString() + "\" type=\"" + typestr + "\"";
 
                 if (param.DataType == 0)
@@ -710,7 +733,7 @@ namespace CodeWalker.GameFiles
                         YdrXml.SelfClosingTag(sb, indent, otstr);
                     }
                 }
-                else if (param.DataType == 1)
+                else if (param.DataType == ShaderVariableType.Vector4)
                 {
                     if (param.Data is Vector4 vec)
                     {
@@ -762,7 +785,7 @@ namespace CodeWalker.GameFiles
                 }
                 else if (type == "Vector")
                 {
-                    p.DataType = 1;
+                    p.DataType = ShaderVariableType.Vector4;
                     float fx = Xml.GetFloatAttribute(pnode, "x");
                     float fy = Xml.GetFloatAttribute(pnode, "y");
                     float fz = Xml.GetFloatAttribute(pnode, "z");
@@ -782,7 +805,7 @@ namespace CodeWalker.GameFiles
                         vecs.Add(new Vector4(fx, fy, fz, fw));
                     }
                     p.Data = vecs.ToArray();
-                    p.DataType = (byte)vecs.Count;
+                    p.DataType = (ShaderVariableType)vecs.Count;
                 }
                 plist.Add(p);
                 hlist.Add(h);
@@ -797,7 +820,7 @@ namespace CodeWalker.GameFiles
                 var param = Parameters[i];
                 if (param.DataType == 0)
                 {
-                    param.Unknown_1h = (byte)(i + 2);//wtf and why
+                    param.RegisterIndex = (byte)(i + 2);//wtf and why
                 }
             }
             var offset = 160;
@@ -806,8 +829,8 @@ namespace CodeWalker.GameFiles
                 var param = Parameters[i];
                 if (param.DataType != 0)
                 {
-                    param.Unknown_1h = (byte)offset;//wtf and why
-                    offset += param.DataType;
+                    param.RegisterIndex = (byte)offset;//wtf and why
+                    offset += (byte)param.DataType;
                 }
             }
 
@@ -859,7 +882,7 @@ namespace CodeWalker.GameFiles
                 {
                     blist.Add(null);
                 }
-                offset += 16 * x.DataType;
+                offset += 16 * (byte)x.DataType;
             }
             ParameterDataBlocks = blist.ToArray();
 
