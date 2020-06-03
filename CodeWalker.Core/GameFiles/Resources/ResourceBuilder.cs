@@ -249,7 +249,7 @@ namespace CodeWalker.GameFiles
 
                 pageFlags = new RpfResourcePageFlags(pageCounts, baseShift);
 
-                if ((pageCount == pageFlags.Count) && (pageFlags.Size >= currentPosition)) //make sure page counts fit in the flags value
+                if ((pageCount == pageFlags.Count) && (pageFlags.Size >= currentPosition) && (pageFlags.Count <= 127)) //make sure page counts fit in the flags value
                 {
                     break;
                 }
@@ -264,7 +264,7 @@ namespace CodeWalker.GameFiles
         public static byte[] Build(ResourceFileBase fileBase, int version, bool compress = true)
         {
             // Create a mock ResourcePagesInfo block to ensure size to fit real one
-            fileBase.FilePagesInfo = new ResourcePagesInfo(255, 255);
+            fileBase.FilePagesInfo = new ResourcePagesInfo(127, 127);
 
             IList<IResourceBlock> systemBlocks;
             IList<IResourceBlock> graphicBlocks;
