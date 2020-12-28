@@ -280,9 +280,15 @@ namespace CodeWalker.GameFiles
             fileBase.FilePagesInfo.SystemPagesCount = (byte)systemPageFlags.Count;
             fileBase.FilePagesInfo.GraphicsPagesCount = (byte)graphicsPageFlags.Count;
 
+            var sysDataSize = (int)systemPageFlags.Size;
+            var gfxDataSize = (int)graphicsPageFlags.Size;
 
-            var systemStream = new MemoryStream();
-            var graphicsStream = new MemoryStream();
+
+            var sysData = new byte[sysDataSize];
+            var gfxData = new byte[gfxDataSize];
+
+            var systemStream = new MemoryStream(sysData);
+            var graphicsStream = new MemoryStream(gfxData);
             var resourceWriter = new ResourceDataWriter(systemStream, graphicsStream);
 
             resourceWriter.Position = 0x50000000;
@@ -315,22 +321,11 @@ namespace CodeWalker.GameFiles
                 }
             }
 
-
-
-
-            var sysDataSize = (int)systemPageFlags.Size;
-            var sysData = new byte[sysDataSize];
             systemStream.Flush();
             systemStream.Position = 0;
-            systemStream.Read(sysData, 0, (int)systemStream.Length);
 
-
-            var gfxDataSize = (int)graphicsPageFlags.Size;
-            var gfxData = new byte[gfxDataSize];
             graphicsStream.Flush();
             graphicsStream.Position = 0;
-            graphicsStream.Read(gfxData, 0, (int)graphicsStream.Length);
-
 
 
             uint uv = (uint)version;
